@@ -114,8 +114,8 @@ class AlgoStrategy(gamelib.AlgoCore):
         # attempt_spawn will try to spawn units if we have resources, and will check if a blocking unit is already there
         if game_state.turn_number == 0:
             # Use up all 40 points to spawn first line of defence (13 turrets and 14 walls)
-            game_state.attempt_spawn(TURRET, self.target_turret_locations[13:])
-            game_state.attempt_spawn(WALL, self.target_wall_locations[14:])
+            game_state.attempt_spawn(TURRET, self.target_turret_locations[:13])
+            game_state.attempt_spawn(WALL, self.target_wall_locations[:14])
         else:
             # 1st priority: repair buildings with <=30% health (except support) and replace destroyed buildings
             # destroyed[4] is a Boolean, it's true for a player removing their own structure.
