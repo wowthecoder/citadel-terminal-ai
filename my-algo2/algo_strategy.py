@@ -85,22 +85,12 @@ class AlgoStrategy(gamelib.AlgoCore):
 
         game_state.submit_turn()
 
-
     """
     NOTE: All the methods after this point are part of the sample starter-algo
     strategy and can safely be replaced for your custom algo.
-    """
+    """   
 
-    def starter_strategy(self, game_state):
-        """
-        For defense we will use a spread out layout and some interceptors early on.
-        We will place turrets near locations the opponent managed to score on.
-        For offense we will use long range demolishers if they place stationary units near the enemy's front.
-        If there are no stationary units to attack in the front, we will send Scouts to try and score quickly.
-        """
-        # First, place basic defenses
-        self.build_defences(game_state)
-
+    def spawn_mobile_units_and_support(self, game_state):
         # If it is the first turn, do not attack and wait to see enemy's base
         if game_state.turn_number != 0:
             # Let's figure out their least defended area and send Scouts there.
@@ -136,7 +126,13 @@ class AlgoStrategy(gamelib.AlgoCore):
                 if num_spawned == 1:
                     break 
 
-    def build_defences(self, game_state):
+    def starter_strategy(self, game_state):
+        """
+        For defense we will use a spread out layout and some interceptors early on.
+        We will place turrets near locations the opponent managed to score on.
+        For offense we will use long range demolishers if they place stationary units near the enemy's front.
+        If there are no stationary units to attack in the front, we will send Scouts to try and score quickly.
+        """
         # Useful tool for setting up your base locations: https://www.kevinbai.design/terminal-map-maker
         # More community tools available at: https://terminal.c1games.com/rules#Download
 
@@ -167,9 +163,10 @@ class AlgoStrategy(gamelib.AlgoCore):
 
             # 3rd priority: build our ideal structure. Build at most 1 support and 5 turrets each turn
             # Support is built after we deploy mobile units (in starter_strategy)
+            self.spawn_mobile_units_and_support(game_state)
             # build turrets on the side where the turrets attack the most
             # first 0 to get 1st in list, 2nd 0 to get key (location), 3rd 0 to get x-coord
-            if not sorted_turrets_desc or sorted_turrets_desc[0][0][0] <= 13:     
+            if not sorted_turrets_desc or sorted_turrets_desc[0][0][0] <= 13:  
                 game_state.attempt_spawn(TURRET, self.left_turret_locations)
             else:
                 game_state.attempt_spawn(TURRET, self.right_turret_locations)
@@ -219,7 +216,7 @@ class AlgoStrategy(gamelib.AlgoCore):
 
         # spawn interceptor when the enemy MP >= 14, choose the side of the turret that attacked the most
         if game_state.get_resource(1, 1) >= 14 and game_state.turn_number > 28:
-            turret_most_attack_location = sorted_turrets_desc[0][0]
+            turret_most_attack_location = sorted_turrets_desc[0][0][0]
             if turret_most_attack_location <= 13: 
                 game_state.attempt_spawn(INTERCEPTOR, [7, 6])
             else:
