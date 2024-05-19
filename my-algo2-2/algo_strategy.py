@@ -32,7 +32,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         gamelib.debug_write('Configuring your custom algo strategy...')
         self.config = config
-        global WALL, SUPPORT, TURRET, SCOUT, DEMOLISHER, INTERCEPTOR
+        global WALL, SUPPORT, TURRET, SCOUT, DEMOLISHER, INTERCEPTOR, SCOUT_HEALTH, DEMOLISHER_HEALTH
         global L1_WALL_HEALTH, L2_WALL_HEALTH, SUPPORT_HEALTH, TURRET_HEALTH
         WALL = config["unitInformation"][0]["shorthand"]
         L1_WALL_HEALTH = config["unitInformation"][0]["startHealth"]
@@ -45,7 +45,9 @@ class AlgoStrategy(gamelib.AlgoCore):
         TURRET_HEALTH = config["unitInformation"][2]["startHealth"]
 
         SCOUT = config["unitInformation"][3]["shorthand"]
+        SCOUT_HEALTH = config["unitInformation"][3]["startHealth"]
         DEMOLISHER = config["unitInformation"][4]["shorthand"]
+        DEMOLISHER_HEALTH = config["unitInformation"][4]["startHealth"]
         INTERCEPTOR = config["unitInformation"][5]["shorthand"]
         # This is a good place to do initial setup
         self.scored_on_locations = []
@@ -103,7 +105,8 @@ class AlgoStrategy(gamelib.AlgoCore):
                 scout_spawn_location_options = [[13, 0], [14, 0]]
                 best_location, min_damage = self.least_damage_spawn_location(game_state, scout_spawn_location_options)
                 gamelib.debug_write("Min damage: {}".format(min_damage))
-                if min_damage < 120:
+                num_scout = math.floor(game_state.get_resource(0))
+                if min_damage < self.total_wave_health(game_state, scout_spawn_location_options, num_scout, SCOUT):
                     game_state.attempt_spawn(SCOUT, best_location, 1000)
                 else:
                     game_state.attempt_spawn(DEMOLISHER, best_location, 1000)
@@ -220,6 +223,8 @@ class AlgoStrategy(gamelib.AlgoCore):
             num_spawned = game_state.attempt_spawn(TURRET, build_location)
             if num_spawned == 0:
                 game_state.attempt_upgrade(build_location)
+            if location not in self.no_building_locations:
+                game_state.attempt_spawn(location)
 
         # spawn interceptor when the enemy MP >= 14, choose the side of the turret that attacked the most
         # if game_state.get_resource(1, 1) >= 14 and game_state.turn_number > 28:
@@ -256,6 +261,24 @@ class AlgoStrategy(gamelib.AlgoCore):
         # Now just return the location that takes the least damage
         return location_options[damages.index(min(damages))], min(damages)
     
+    # helper function to find out total health of the wave of mobile units from each spawn point, including shields
+    # estimate the shield amount cuz I don't have time 
+    def total_wave_health(self, game_state, location_options, num_troop, troop_type):
+        health = (num_troop * SCOUT_HEALTH) if troop_type == SCOUT else (num_troop * DEMOLISHER_HEALTH)
+        
+        # Assume every unit gets 2 supports
+        if game_state.turn_number > 8:
+            health += 6 * num_troop
+        elif game_state.turn_number > 18:
+            health += 9 * num_troop 
+        elif game_state.turn_number > 28:
+            health += 21 * num_troop
+        elif game_state.turn_number > 38:
+            health += 33 * num_troop
+        else:
+            health += 50 * num_troop
+
+        return health
 
     def detect_enemy_unit(self, game_state, unit_type=None, valid_x = None, valid_y = None):
         total_units = 0
