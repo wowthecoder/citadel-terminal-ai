@@ -49,8 +49,9 @@ class AlgoStrategy(gamelib.AlgoCore):
         INTERCEPTOR = config["unitInformation"][5]["shorthand"]
         # This is a good place to do initial setup
         self.scored_on_locations = []
-        self.unit_type_map = { 0: WALL, 1: SUPPORT, 2: TURRET }
         self.spawn_left, self.last_spawn = True, 0
+        self.unit_type_map = { 0: WALL, 1: SUPPORT, 2: TURRET }
+        self.destroyed_buildings, self.turret_attacks, self.support_shields, self.wall_damage = [], {}, {}, {}
         # target defence structure
         self.left_support_locations = [[11, 4], [10, 8], [12, 3], [13, 2], [12, 4], [13, 4], [13, 3]]
         self.right_support_locations = [[16, 4], [17, 8], [15, 3], [14, 2], [14, 4], [15, 4], [14, 3]]
@@ -77,9 +78,10 @@ class AlgoStrategy(gamelib.AlgoCore):
         units = state["p1Units"]
         self.wall_stats, self.support_stats, self.turret_stats = units[0], units[1], units[2]
         self.upgrade_locations = units[7]
-        self.destroyed_buildings, self.turret_attacks, self.support_shields, self.wall_damage = [], {}, {}, {}
 
         self.starter_strategy(game_state)
+
+        self.destroyed_buildings = []
 
         game_state.submit_turn()
 
@@ -111,7 +113,7 @@ class AlgoStrategy(gamelib.AlgoCore):
                 scout_spawn_location_options = [[13, 0], [14, 0]]
                 best_location, min_damage = self.least_damage_spawn_location(game_state, scout_spawn_location_options)
                 gamelib.debug_write("Min damage: {}".format(min_damage))
-                if min_damage < 20:
+                if min_damage < 120:
                     game_state.attempt_spawn(SCOUT, best_location, 1000)
                 else:
                     game_state.attempt_spawn(DEMOLISHER, best_location, 1000)
@@ -120,7 +122,7 @@ class AlgoStrategy(gamelib.AlgoCore):
                     self.spawn_left = True
                     support_locations = self.left_support_locations
                 else:
-                    self.spawn_right = False 
+                    self.spawn_left = False 
                     support_locations = self.right_support_locations
                 
                 self.last_spawn = game_state.turn_number
@@ -166,7 +168,8 @@ class AlgoStrategy(gamelib.AlgoCore):
             # 3rd priority: build our ideal structure. Build at most 1 support and 5 turrets each turn
             # Support is built after we deploy mobile units (in starter_strategy)
             # build turrets on the side where the turrets attack the most
-            if not sorted_turrets_desc or sorted_turrets_desc[0][0] <= 13:     
+            # first 0 to get 1st in list, 2nd 0 to get key (location), 3rd 0 to get x-coord
+            if not sorted_turrets_desc or sorted_turrets_desc[0][0][0] <= 13:     
                 game_state.attempt_spawn(TURRET, self.left_turret_locations)
             else:
                 game_state.attempt_spawn(TURRET, self.right_turret_locations)
@@ -184,7 +187,7 @@ class AlgoStrategy(gamelib.AlgoCore):
             # If there's spare SP > 10, dont waste it. Add 1 turret at any random location that is not a forbidden(no building) location
             # no building locations are specified so that we don't block the path of mobile units
             if game_state.get_resource(0) > 10:  
-                self.build_relevant_turrets(self, game_state, sorted_turrets_desc[5:])
+                self.build_relevant_turrets(game_state, sorted_turrets_desc[5:])
 
     def build_relevant_turrets(self, game_state, sorted_turrets_desc):
         # Based on importance metrics, add turrets near the turrets that attack the most
@@ -193,7 +196,7 @@ class AlgoStrategy(gamelib.AlgoCore):
                 for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                     spawn_loc = (x + dx, y + dy)
                     if spawn_loc not in self.no_building_locations:
-                        game_state.attempt_spawn(list(spawn_loc))
+                        game_state.attempt_spawn(TURRET, list(spawn_loc))
                 if game_state.get_resource(0) < 2:
                     return
                 
@@ -300,15 +303,16 @@ class AlgoStrategy(gamelib.AlgoCore):
         shields = events["shield"]
         # damage_taken = events["damage"]
         for attack in attacks:
-            if attack[3] == 2:
+            if attack[6] == 1 and attack[3] == 2:
                 # turret location as key, turret damage as value
                 location = tuple(attack[0])
                 self.turret_attacks[location] = self.turret_attacks.get(location, 0) + attack[2]
         for shield in shields:
-            # support location as key, total shield amount as value
-            location = tuple(shield[0])
-            self.support_shields[location] = self.support_shields.get(location, 0) + shield[2]
-            gamelib.debug_write("Support at {sup} gave shield value {amt} to {id}".format(sup=location, amt=shield[2], id=shield[5]))
+            if shield[6] == 1:
+                # support location as key, total shield amount as value
+                location = tuple(shield[0])
+                self.support_shields[location] = self.support_shields.get(location, 0) + shield[2]
+                gamelib.debug_write("Support at {sup} gave shield value {amt} to {id}".format(sup=location, amt=shield[2], id=shield[5]))
         # for damage in damage_taken:
         #     if damage[2] == 0:
         #         # wall location as key, total damage taken as value

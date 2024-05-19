@@ -263,16 +263,18 @@ class AlgoStrategy(gamelib.AlgoCore):
         shields = events["shield"]
         damage_taken = events["damage"]
         for attack in attacks:
-            if attack[3] == 2:
+            if attack[6] == 1 and attack[3] == 2:
                 # turret location as key, turret damage as value
                 location = tuple(attack[0])
                 self.turret_attacks[location] = self.turret_attacks.get(location, 0) + attack[2]
         for shield in shields:
-            # support location as key, total shield amount as value
-            location = tuple(shield[0])
-            self.support_shields[location] = self.support_shields.get(location, 0) + shield[2]
+            if shield[6] == 1:
+                # support location as key, total shield amount as value
+                location = tuple(shield[0])
+                self.support_shields[location] = self.support_shields.get(location, 0) + shield[2]
+                gamelib.debug_write("Support at {sup} gave shield value {amt} to {id}".format(sup=location, amt=shield[2], id=shield[5]))
         for damage in damage_taken:
-            if damage[2] == 0:
+            if damage[4] == 1 and damage[2] == 0:
                 # wall location as key, total damage taken as value
                 location = tuple(damage[0])
                 self.wall_damage[location] = self.wall_damage.get(location, 0) + damage[1]
