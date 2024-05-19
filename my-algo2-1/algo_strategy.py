@@ -156,6 +156,13 @@ class AlgoStrategy(gamelib.AlgoCore):
                 if hp_percent <= 0.3:
                     game_state.attempt_remove(location)
 
+            # Extra priority: force upgrade at least 1 support per round after round 20
+            if game_state.turn_number > 18:
+                for (x, y, _, _) in self.support_stats:
+                    upgrade_success = game_state.attempt_upgrade([x, y])
+                    if upgrade_success == 1:
+                        break
+
             # 2nd priority: Build any reactive defence
             sorted_turrets_desc = sorted(self.turret_attacks.items(), key=lambda item: item[1], reverse=True)
             gamelib.debug_write("sorted_turrets: {}".format(sorted_turrets_desc))
@@ -215,12 +222,12 @@ class AlgoStrategy(gamelib.AlgoCore):
                 game_state.attempt_upgrade(build_location)
 
         # spawn interceptor when the enemy MP >= 14, choose the side of the turret that attacked the most
-        if game_state.get_resource(1, 1) >= 14 and game_state.turn_number > 28:
-            turret_most_attack_location = sorted_turrets_desc[0][0][0]
-            if turret_most_attack_location <= 13: 
-                game_state.attempt_spawn(INTERCEPTOR, [7, 6])
-            else:
-                game_state.attempt_spawn(INTERCEPTOR, [20, 6])
+        # if game_state.get_resource(1, 1) >= 14 and game_state.turn_number > 28:
+        #     turret_most_attack_location = sorted_turrets_desc[0][0][0]
+        #     if turret_most_attack_location <= 13: 
+        #         game_state.attempt_spawn(INTERCEPTOR, [7, 6])
+        #     else:
+        #         game_state.attempt_spawn(INTERCEPTOR, [20, 6])
 
     # To make sure the path of the interceptor is blocked so it goes up instead of to the opposite side
     # def check_interceptor_path(self, game_state, left=True):
@@ -248,6 +255,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         
         # Now just return the location that takes the least damage
         return location_options[damages.index(min(damages))], min(damages)
+    
 
     def detect_enemy_unit(self, game_state, unit_type=None, valid_x = None, valid_y = None):
         total_units = 0
