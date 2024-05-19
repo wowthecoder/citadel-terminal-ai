@@ -213,6 +213,9 @@ class AlgoStrategy(gamelib.AlgoCore):
         We can track where the opponent scored by looking at events in action frames 
         as shown in the on_action_frame function
         """
+        if tuple(location) not in self.no_building_locations:
+                game_state.attempt_spawn(TURRET, location)
+        
         self.build_relevant_turrets(game_state, sorted_turrets_desc)
 
         for location in self.scored_on_locations:
@@ -223,8 +226,6 @@ class AlgoStrategy(gamelib.AlgoCore):
             num_spawned = game_state.attempt_spawn(TURRET, build_location)
             if num_spawned == 0:
                 game_state.attempt_upgrade(build_location)
-            if location not in self.no_building_locations:
-                game_state.attempt_spawn(location)
 
         # spawn interceptor when the enemy MP >= 14, choose the side of the turret that attacked the most
         # if game_state.get_resource(1, 1) >= 14 and game_state.turn_number > 28:
