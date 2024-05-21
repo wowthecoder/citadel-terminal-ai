@@ -28,7 +28,7 @@ I decided that my defensive structure is too weak and I scrapped it completely, 
 ![image](https://github.com/wowthecoder/citadel-terminal-ai/assets/82577844/bc9d1dad-70a4-45de-8c1a-1e5b64b66f7c) <br>
  - I also realised that supports are super important for endgame because the additional health it gives my Mobile units enable them to breach regions with high turret density. As such, I made it a high priority in my code to build/upgrade my supports. <br>
  - For defence, I aim to build out my ideal structure as fast as possible, and repair any buildings with <= 30% health. I also tracked the turrets which deals the most damage to enemy Mobile units, which serves as an indication of how often a region is targeted by the enemy. I then use this information to prioritise upgrading turrets in those highly targeted regions. <br>
- - As for offense, I wrote a function to calculate the path with least damage, and use this least damage to choose between 2 options: if the damage is low, rush their base with fast Scouts; else mow down their defence with Demolishers. 
+ - As for offense, I wrote a function to calculate the path with least damage, and use this least damage to choose between 2 options: if the damage is low, rush their base with fast Scouts; else mow down their defence with Demolishers. <br>
 Full details of my logic are well documented in the code file. <br>
 **Note**: I did not manage to fully test out version 2.2 (the version in this repo) due to lack of time. I submitted a slightly weaker 2.1 version for the competition.
 
